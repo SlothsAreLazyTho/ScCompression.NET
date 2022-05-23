@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -6,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using LzhamWrapper;
+using LzhamWrapper.Enums;
 
 using SevenZip.Compression.LZMA;
 
@@ -40,6 +42,8 @@ namespace ScCompression.Core
         /// <exception cref="FileNotFoundException">Occurs when file is not found</exception>
         public static async Task<CompressionResult> LoadAsync(string filePath)
         {
+            Console.WriteLine($"Working on {filePath}");
+            
             if (!File.Exists(filePath))
                 throw new FileNotFoundException("File does not exist.");
 
@@ -53,23 +57,24 @@ namespace ScCompression.Core
                 CompressionType.SC   => DecompressSc(buffer),
                 CompressionType.SCLZ => DecompressSclz(buffer[4..buffer.Length]),
                 CompressionType.SIG  => DecompressLzma(buffer[68..buffer.Length]),
-                CompressionType.NONE => new MemoryStream(buffer)
+                CompressionType.NONE => buffer
             };
 
             return new CompressionResult(filePath, stream, type);
         }
 
-        public static Stream DecompressLzma(byte[] buffer)
+        public static byte[] DecompressLzma(byte[] buffer)
         {
             var uncompressedSize   = Unsafe.ReadUnaligned<int>(ref buffer[5]);
+            var lzmaProperties     = buffer[..5];
             var uncompressedStream = new MemoryStream(uncompressedSize);
             var compressedStream   = new MemoryStream(buffer[9..]);
-            _decoder.SetDecoderProperties(buffer[..5]);
-            _decoder.Code(compressedStream, uncompressedStream, compressedStream.Length, uncompressedStream.Length, null);
-            return uncompressedStream;
+            _decoder.SetDecoderProperties(lzmaProperties);
+            _decoder.Code(compressedStream, uncompressedStream, compressedStream.Length, uncompressedSize, null);
+            return uncompressedStream.ToArray();
         }
         
-        public static Stream DecompressSc(byte[] buffer)
+        public static byte[] DecompressSc(byte[] buffer)
         {
             var fileVersion  = Unsafe.ReadUnaligned<int>(ref buffer[2]);
 
@@ -84,38 +89,39 @@ namespace ScCompression.Core
             
             if (possibleSignatureMatch == CompressionType.SCLZ)
                 return DecompressSclz(buffer[34..buffer.Length]);
-
-            var contentBuffer = buffer[(10 + hashLength)..];
-            var content = new MemoryStream(contentBuffer.Length);
-
-            content.Write(contentBuffer, 0, contentBuffer.Length);
-
-            return content;
+            
+            var content = new MemoryStream(buffer[(10 + hashLength)..]);
+            return content.ToArray();
         }
         
-        public static Stream DecompressSclz(byte[] buffer)
+        public static byte[] DecompressSclz(byte[] buffer)
         {
             var dictionarySize   = Unsafe.ReadUnaligned<byte>(ref buffer[0]);
             var uncompressedSize = Unsafe.ReadUnaligned<int>(ref buffer[1]); /* Lzham Compression is required to decompress this one */
             
             var decompressionParameters = new DecompressionParameters()
-                { DictionarySize = dictionarySize };
-            
+            {
+                DictionarySize = dictionarySize,
+                UpdateRate = TableUpdateRate.Default
+            };
+
+            var content      = buffer[5..];
             var outputBuffer = new byte[uncompressedSize];
-            var adler32 = (uint) 0x0000000;
+            var adler32      = (uint) 0x0000000;
             
             Lzham.DecompressMemory(decompressionParameters, 
-                buffer, buffer.Length, 0, 
+                content, content.Length, 0, 
                 outputBuffer, ref uncompressedSize, 0, ref adler32);
-
-            return new MemoryStream(outputBuffer);
+            
+            return outputBuffer;
         }
 
         public static CompressionType AutoDetect(byte[] data)
         {
             var signatureBlock = data[..4].Reverse().ToArray();
             var unsignedInt = Unsafe.ReadUnaligned<uint>(ref signatureBlock[0]); /* Reader reads Little Endians and we want Big Endians */
-            return Signatures.ContainsKey(unsignedInt) ? Signatures[unsignedInt] : CompressionType.NONE;
+            var result = Signatures.ContainsKey(unsignedInt) ? Signatures[unsignedInt] : CompressionType.NONE;
+            return result;
         }
         
     }

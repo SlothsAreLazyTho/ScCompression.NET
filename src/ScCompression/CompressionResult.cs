@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,21 +10,16 @@ namespace ScCompression.Core
     public class CompressionResult
     {
 
-        public CompressionResult(string path, Stream content, CompressionType type = CompressionType.NONE)
+        public CompressionResult(string path, byte[] buffer, CompressionType type = CompressionType.NONE)
         {
             Name =  path[(path.LastIndexOf(Path.DirectorySeparatorChar) + 1)..];
             Extension = Path.GetExtension(Name);
             FilePath = path;
-            Content = content;
+            Content = buffer;
             Type = type;
-
-            if (type == CompressionType.SC)
-            {
-                Console.Write("");
-            }
-
+            
 #if DEBUG
-            Console.WriteLine($"[DEBUG] {Name}, Type: {Type}, Content Length: {Content.Length}");
+            //Console.WriteLine($"[DEBUG] {Name}, Type: {Type}, Content Length: {Content.Length}");
 #endif
         }
 
@@ -46,31 +42,18 @@ namespace ScCompression.Core
         /// Content of the file
         /// </summary>
         [JsonIgnore]
-        public Stream Content { get; set; }
+        public byte[] Content { get; set; }
         
         /// <summary>
         /// Type the file is compressed with
         /// </summary>
         public CompressionType Type { get; set; }
-
-
+        
         /// <summary>
-        /// Read Stream as Byte Array
+        /// Read the buffer as string
         /// </summary>
-        /// <returns>Buffer</returns>
-        public async Task<byte[]> ReadAsByteArrayAsync()
-        {
-            var memory = new byte[Content.Length];
-            var result = await Content.ReadAsync(memory, 0, memory.Length).ConfigureAwait(false);
-            return memory;
-        }
-        
-        public byte[] ReadAsByteArray()
-        {
-            var memory = new byte[Content.Length];
-            var result = Content.Read(memory, 0, memory.Length);
-            return memory;
-        }
-        
+        /// <returns>Content</returns>
+        public string ReadAsString() => Encoding.UTF8.GetString(Content);
+
     }
 }

@@ -17,10 +17,7 @@ namespace ScCompression.Example
             var stopwatch = Stopwatch.StartNew();
             var file = Path.Combine(Directory.GetCurrentDirectory(), "assets.csv");
             var decompressed = await SupercellDecoder.LoadAsync(file);
-            
-            using var fileStream = File.Open("output.csv", FileMode.OpenOrCreate);
-            
-            await decompressed.Content.CopyToAsync(fileStream);
+            await File.WriteAllBytesAsync("output.csv", decompressed.Content);
             
             stopwatch.Stop();
             Console.WriteLine($"Time Elapsed: {stopwatch.Elapsed}");
