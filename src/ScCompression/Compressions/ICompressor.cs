@@ -1,19 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System.IO;
 
 namespace ScCompression.Core.Compressions
 {
     public interface ICompressor
     {
-
-        static byte[] Compress(byte[] buffer)
-        {
-            return new byte[0];
-        }
         
-        static byte[] Decompress(byte[] buffer)
-        {
-            return new byte[0];
-        }
+        Stream Decompress(SupercellReader reader, int offset = 0);
 
     }
 }

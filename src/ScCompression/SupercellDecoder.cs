@@ -13,13 +13,11 @@ using SevenZip.Compression.LZMA;
 
 namespace ScCompression.Core
 {
-    public static class SupercellDecoder
+    public class SupercellDecoder
     {
         
         /*
          * TODO Write Tests
-         * TODO Work more with Cancellation Tokens.
-         * TODO Add CompressionOptions
          * TODO Add Compress Ability
          */
         
@@ -47,19 +45,14 @@ namespace ScCompression.Core
 
             var buffer = await File.ReadAllBytesAsync(filePath, default);
             var reader = new SupercellReader(buffer);
-            
             var type = reader.ReadSignature();
-
-            var stream = type switch
-            {
-                CompressionType.LZMA => LzmaCompressor.Decompress(buffer),
-                CompressionType.SC   => ScCompressor.Decompress(buffer),
-                CompressionType.SCLZ => SclzCompressor.Decompress(buffer[4..buffer.Length]),
-                CompressionType.SIG  => LzmaCompressor.Decompress(buffer[68..buffer.Length]),
-                CompressionType.NONE => buffer
-            };
-
-            return new CompressionResult(filePath, stream, type);
+            
+            if(type.Equals(CompressionType.NONE))
+                return new CompressionResult(filePath, File.Open(filePath, FileMode.Open), type);
+            
+            var compressor = CompressorFactory.Create(reader, type);
+            
+            return new CompressionResult(filePath, compressor.Decompress(reader, type == CompressionType.SIG ? 68 : 0), type);
         }
         
     }

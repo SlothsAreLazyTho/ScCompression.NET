@@ -10,16 +10,16 @@ namespace ScCompression.Core
     public class CompressionResult
     {
 
-        public CompressionResult(string path, byte[] buffer, CompressionType type = CompressionType.NONE)
+        public CompressionResult(string path, Stream stream, CompressionType type = CompressionType.NONE)
         {
             Name =  path[(path.LastIndexOf(Path.DirectorySeparatorChar) + 1)..];
             Extension = Path.GetExtension(Name);
             FilePath = path;
-            Content = buffer;
+            Content = stream;
             Type = type;
             
 #if DEBUG
-            //Console.WriteLine($"[DEBUG] {Name}, Type: {Type}, Content Length: {Content.Length}");
+            Console.WriteLine($"[DEBUG] {Name}, Type: {Type}, Content Length: {Content.Length}");
 #endif
         }
 
@@ -42,18 +42,26 @@ namespace ScCompression.Core
         /// Content of the file
         /// </summary>
         [JsonIgnore]
-        public byte[] Content { get; set; }
+        public Stream Content { get; set; }
         
         /// <summary>
         /// Type the file is compressed with
         /// </summary>
         public CompressionType Type { get; set; }
+
+
+        public async Task<byte[]> ReadAsByteArrayAsync()
+        {
+            var buffer = new byte[Content.Length - Content.Position];
+            await Content.ReadAsync(buffer, 0, buffer.Length);
+            return buffer;
+        }
         
         /// <summary>
         /// Read the buffer as string
         /// </summary>
         /// <returns>Content</returns>
-        public string ReadAsString() => Encoding.UTF8.GetString(Content);
+        public async Task<string> ReadAsStringAsync() => Encoding.UTF8.GetString(await ReadAsByteArrayAsync());
 
     }
 }

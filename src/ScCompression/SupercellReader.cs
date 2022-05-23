@@ -13,11 +13,11 @@ namespace ScCompression.Core
         public int Position;
         public readonly int Length;
         
-        public SupercellReader(byte[] buffer)
+        public SupercellReader(byte[] buffer, int offset = 0)
         {
             _buffer = buffer;
             Length = buffer.Length;
-            Position = 0;
+            Position = offset;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -41,16 +41,32 @@ namespace ScCompression.Core
             return Unsafe.ReadUnaligned<T>(ref bytes[0]);
         }
 
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Read<T>(int offset, SeekOrigin origin = SeekOrigin.Current) where T : unmanaged
+        {
+            Seek(offset, origin);
+            return Read<T>();
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ReadInt32BE()
         {
             var buffer = ReadBytes(4).Reverse().ToArray();
             return Unsafe.ReadUnaligned<int>(ref buffer[0]);
         }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public uint ReadUInt32BE()
+        {
+            var buffer = ReadBytes(4).Reverse().ToArray();
+            return Unsafe.ReadUnaligned<uint>(ref buffer[0]);
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CompressionType ReadSignature()
         {
-            var signatureBlock = ReadBytes(4).Reverse().ToArray();
-            var unsignedInt = Unsafe.ReadUnaligned<uint>(ref signatureBlock[0]); /* Reader reads Little Endians and we want Big Endians */
+            var unsignedInt = ReadUInt32BE();
             var result = SupercellDecoder.Signatures.ContainsKey(unsignedInt) ? SupercellDecoder.Signatures[unsignedInt] : CompressionType.NONE;
             Seek(Position - 4, SeekOrigin.Begin);
             return result;
@@ -64,5 +80,7 @@ namespace ScCompression.Core
             Seek(length);
             return buffer;
         }
+        
+        public byte[] ToArray() => _buffer;
     }
 }

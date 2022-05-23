@@ -1,4 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.IO;
+using System.Runtime.CompilerServices;
 using LzhamWrapper;
 using LzhamWrapper.Enums;
 
@@ -7,9 +9,10 @@ namespace ScCompression.Core.Compressions
     public sealed class SclzCompressor : ICompressor
     {
         
-        public static byte[] Decompress(byte[] buffer)
+        public Stream Decompress(SupercellReader reader, int offset = 0)
         {
-            var reader           = new SupercellReader(buffer);
+            reader.Seek(offset, SeekOrigin.Begin);
+            
             var dictionarySize   = reader.Read<byte>();
             var uncompressedSize = reader.Read<int>(); /* Lzham Compression is required to decompress this one */
             
@@ -22,12 +25,19 @@ namespace ScCompression.Core.Compressions
             var content      = reader.ReadBytes(reader.Length - 5);
             var outputBuffer = new byte[uncompressedSize];
             var adler32      = (uint) 0x0000000;
-            
-            Lzham.DecompressMemory(decompressionParameters, 
-                content, content.Length, 0, 
-                outputBuffer, ref uncompressedSize, 0, ref adler32);
-            
-            return outputBuffer;
+
+            try
+            {
+                Lzham.DecompressMemory(decompressionParameters,
+                    content, content.Length, 0,
+                    outputBuffer, ref uncompressedSize, 0, ref adler32);
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine($"[ERROR] {e.Message}");
+            }
+
+            return new MemoryStream(outputBuffer);
         }
     }
 }
