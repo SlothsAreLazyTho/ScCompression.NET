@@ -3,7 +3,7 @@ using SevenZip.Compression.LZMA;
 
 namespace ScCompression.Core.Compressions
 {
-    public class LzmaCompressor : ICompressor
+    public sealed class LzmaCompressor : ICompressor
     {
         
         public static byte[] Decompress(byte[] buffer)

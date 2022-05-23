@@ -2,7 +2,7 @@
 
 namespace ScCompression.Core.Compressions
 {
-    public class ScCompressor : ICompressor
+    public sealed class ScCompressor : ICompressor
     {
 
         public static byte[] Decompress(byte[] buffer)

@@ -4,7 +4,7 @@ using LzhamWrapper.Enums;
 
 namespace ScCompression.Core.Compressions
 {
-    public class SclzCompressor : ICompressor
+    public sealed class SclzCompressor : ICompressor
     {
         
         public static byte[] Decompress(byte[] buffer)
