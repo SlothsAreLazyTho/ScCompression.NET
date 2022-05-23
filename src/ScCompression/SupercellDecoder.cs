@@ -38,8 +38,6 @@ namespace ScCompression.Core
         /// <exception cref="FileNotFoundException">Occurs when file is not found</exception>
         public static async Task<CompressionResult> LoadAsync(string filePath)
         {
-            Console.WriteLine($"Working on {filePath}");
-            
             if (!File.Exists(filePath))
                 throw new FileNotFoundException("File does not exist.");
 
@@ -52,7 +50,7 @@ namespace ScCompression.Core
             
             var compressor = CompressorFactory.Create(reader, type);
             
-            return new CompressionResult(filePath, compressor.Decompress(reader, type == CompressionType.SIG ? 68 : 0), type);
+            return new CompressionResult(filePath, compressor.Decompress(reader, type == CompressionType.SIG ? 68 : default), type);
         }
         
     }

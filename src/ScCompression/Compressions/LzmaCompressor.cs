@@ -16,7 +16,7 @@ namespace ScCompression.Core.Compressions
             var decoder = new Decoder();
             var lzmaProperties = reader.ReadBytes(5);
             var uncompressedSize = reader.Read<int>();
-            var compressedBuffer = reader.ReadBytes(reader.Length - 9);
+            var compressedBuffer = reader.ReadBytes(reader.Length - reader.Position); //reader.ToArray()[9..];
             var uncompressedStream = new MemoryStream(uncompressedSize);
             using var compressedStream = new MemoryStream(compressedBuffer);
 

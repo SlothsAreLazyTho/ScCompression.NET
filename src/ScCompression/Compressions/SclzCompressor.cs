@@ -8,6 +8,9 @@ namespace ScCompression.Core.Compressions
 {
     public sealed class SclzCompressor : ICompressor
     {
+
+        private uint _adler32 = 0x000000;
+        
         
         public Stream Decompress(SupercellReader reader, int offset = 0)
         {
@@ -22,20 +25,12 @@ namespace ScCompression.Core.Compressions
                 UpdateRate = TableUpdateRate.Default
             };
             
-            var content      = reader.ReadBytes(reader.Length - 5);
+            var content = reader.ReadBytes(reader.Length - reader.Position);
             var outputBuffer = new byte[uncompressedSize];
-            var adler32      = (uint) 0x0000000;
-
-            try
-            {
-                Lzham.DecompressMemory(decompressionParameters,
-                    content, content.Length, 0,
-                    outputBuffer, ref uncompressedSize, 0, ref adler32);
-            }
-            catch(Exception e)
-            {
-                Console.WriteLine($"[ERROR] {e.Message}");
-            }
+            
+            Lzham.DecompressMemory(decompressionParameters,
+                content, content.Length, 0,
+                outputBuffer, ref uncompressedSize, 0, ref _adler32);
 
             return new MemoryStream(outputBuffer);
         }

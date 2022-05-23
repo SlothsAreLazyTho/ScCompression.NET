@@ -7,12 +7,12 @@ namespace ScCompression.Core.Compressions
 
         public Stream Decompress(SupercellReader reader, int offset = 2)
         {
-            reader.Seek(offset, SeekOrigin.Begin);
+            reader.Seek(2, SeekOrigin.Begin);
 
-            var fileVersion = reader.Read<int>();
+            var fileVersion = reader.ReadInt32BE();
 
             if (fileVersion >= 4)
-                fileVersion = reader.Read<int>();
+                fileVersion = reader.ReadInt32BE();
 
             var hashLength = reader.ReadInt32BE();
             var hash = reader.ReadBytes(hashLength);

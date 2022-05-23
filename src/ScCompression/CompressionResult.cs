@@ -52,9 +52,10 @@ namespace ScCompression.Core
 
         public async Task<byte[]> ReadAsByteArrayAsync()
         {
-            var buffer = new byte[Content.Length - Content.Position];
-            await Content.ReadAsync(buffer, 0, buffer.Length);
-            return buffer;
+            var buffer = new MemoryStream((int) Content.Length);
+            Content.Seek(0, SeekOrigin.Begin);
+            await Content.CopyToAsync(buffer);
+            return buffer.ToArray();
         }
         
         /// <summary>

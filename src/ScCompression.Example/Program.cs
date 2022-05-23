@@ -13,17 +13,13 @@ namespace ScCompression.Example
         public static async Task Main(string[] args)
         {
             Directory.CreateDirectory("Output");
-         
+            
             var stopwatch = Stopwatch.StartNew();
-            
             var file = Path.Combine(Directory.GetCurrentDirectory(), "assets.csv");
-            
             var decompressed = await SupercellDecoder.LoadAsync(file);
-            
             await File.WriteAllBytesAsync("output.csv", await decompressed.ReadAsByteArrayAsync());
             
             stopwatch.Stop();
-            
             Console.WriteLine($"Time Elapsed: {stopwatch.Elapsed}");
             
         }

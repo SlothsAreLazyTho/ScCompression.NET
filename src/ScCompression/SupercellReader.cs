@@ -5,12 +5,19 @@ using System.Runtime.CompilerServices;
 
 namespace ScCompression.Core
 {
-    public class SupercellReader
+    public class SupercellReader : IDisposable
     {
-
+        
         private readonly byte[] _buffer;
 
-        public int Position;
+        private int _position;
+
+        public int Position
+        {
+            get => _position;
+            set => _position = value;
+        }
+        
         public readonly int Length;
         
         public SupercellReader(byte[] buffer, int offset = 0)
@@ -37,7 +44,6 @@ namespace ScCompression.Core
         {
             var size = Unsafe.SizeOf<T>();
             var bytes = ReadBytes(size);
-            Seek(size, SeekOrigin.Current);
             return Unsafe.ReadUnaligned<T>(ref bytes[0]);
         }
 
@@ -76,11 +82,17 @@ namespace ScCompression.Core
         public byte[] ReadBytes(int length)
         {
             byte[] buffer = new byte[length];
-            Unsafe.CopyBlockUnaligned(ref buffer[0], ref _buffer[Position], (uint) length);
+            Unsafe.CopyBlockUnaligned(ref buffer[0], ref _buffer[_position], (uint) length);
             Seek(length);
             return buffer;
         }
         
         public byte[] ToArray() => _buffer;
+        
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+        }
+        
     }
 }
